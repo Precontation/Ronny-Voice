@@ -1,3 +1,5 @@
+# Copyright 2026 The Ronny Voice Foundation
+
 model = 'moonshotai/kimi-k2-instruct-0905'
 system_prompt = open("src/utils/system_prompt.txt").read()
 

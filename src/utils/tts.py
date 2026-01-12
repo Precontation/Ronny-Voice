@@ -1,4 +1,6 @@
+# Copyright 2026 The Ronny Voice Foundation
 # Some code partly taken from the Google Cloud documentation: https://docs.cloud.google.com/text-to-speech/docs/chirp3-hd
+
 from google.cloud import texttospeech
 import sounddevice as sd
 import numpy as np

@@ -1,8 +1,9 @@
+# Copyright 2026 The Ronny Voice Foundation
+
 import sounddevice as sd
 import numpy as np
 import queue
 import soundfile as sf
-from scipy.io.wavfile import write
 from typing import Any, cast # For casting the sounddevice's input devices to a dict
 import time as timeButDifferentNameAA
 

@@ -1,3 +1,5 @@
+# Copyright 2026 The Ronny Voice Foundation
+
 """
 Handles both the TTS generation and text generation at the same time, streamed to be faster.
 """

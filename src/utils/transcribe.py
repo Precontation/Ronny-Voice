@@ -1,3 +1,5 @@
+# Copyright 2026 The Ronny Voice Foundation
+
 import soundfile as sf
 import io
 

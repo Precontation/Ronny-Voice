@@ -1,3 +1,5 @@
+# Copyright 2026 The Ronny Voice Foundation
+
 # Other scripts
 from utils import recorder, transcribe, streaming
 
