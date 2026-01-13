@@ -1,7 +1,5 @@
 # Ronny Voice
 
----
-
 ## About
 
 Ronny Voice is a open-source, private, and AI-powered voice assistant for the 2026 Invention Convention.
