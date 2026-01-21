@@ -6,3 +6,4 @@ secrets/
 *-key.json
 temp_output.mp3
 temp_recording.wav
+**/__pycache__/

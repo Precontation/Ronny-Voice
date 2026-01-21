@@ -6,3 +6,4 @@ scipy==1.16.3
 soundfile==0.13.1
 google-cloud-texttospeech==2.33.0
 pvporcupine==4.0.1
+pvrecorder==1.2.7

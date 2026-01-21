@@ -1,6 +1,14 @@
 # Copyright 2026 The Ronny Voice Foundation
 
-import pvporcupine
+from pvporcupine import Porcupine
+from pvrecorder import PvRecorder
 
-def start_detecting(client: pvporcupine.Porcupine):
-    pass
+async def wait_for_wake_word(client: Porcupine):
+    recorder = PvRecorder(frame_length=512)
+    recorder.start()
+    while recorder.is_recording:
+        frame = recorder.read()
+        keyword_index = client.process(frame)
+        if (keyword_index >= 0):
+            recorder.delete()
+            return
