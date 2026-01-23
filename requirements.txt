@@ -7,3 +7,9 @@ soundfile==0.13.1
 google-cloud-texttospeech==2.33.0
 pvporcupine==4.0.1
 pvrecorder==1.2.7
+geocoder==1.38.1
+openmeteo_requests==1.7.5
+numexpr==2.14.1
+pandas==3.0.0
+requests_cache==1.2.1
+retry-requests==2.0.0

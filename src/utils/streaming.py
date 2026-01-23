@@ -3,6 +3,7 @@
 """
 Handles both the TTS generation and text generation at the same time, streamed to be faster.
 """
+import json
 import sounddevice as sd
 import queue
 from google.cloud import texttospeech
@@ -25,6 +26,53 @@ audio_config = texttospeech.AudioConfig(
 
 q = queue.Queue()
 
+from .tools import calculate, weather
+
+# Map function names to implementations
+available_functions = {
+    "calculate": calculate.calculate,
+    "get_weather_now": weather.get_weather_now,
+    "get_weather_today": weather.get_weather_today,
+    "get_forcast": weather.get_weather_forecast,
+    # "search_database": search_database,
+}
+
+def execute_tool_call(tool_call):
+    """Parse and execute a single tool call"""
+    function_name = tool_call.function.name
+    function_to_call = available_functions[function_name]
+    function_args = json.loads(tool_call.function.arguments)
+    
+    # Call the function with unpacked arguments
+    return function_to_call(**function_args)
+
+def call_with_tools_and_retry(client, messages, tools, max_retries=3):
+    """Call model with tools, retrying with adjusted temperature on failure"""
+    
+    # Start with moderate temperature
+    temperature = 1.0
+    
+    for attempt in range(max_retries):
+        try:
+            response = client.chat.completions.create(
+                model="openai/gpt-oss-120b",
+                messages=messages,
+                tools=tools,
+                temperature=temperature
+            )
+            return response
+        except Exception as e:
+            # Check if this is a tool call generation error
+            if hasattr(e, 'status_code') and e.status_code == 400: # type: ignore
+                if attempt < max_retries - 1:
+                    # Decrease temperature for next attempt to reduce hallucinations
+                    temperature = max(temperature - 0.2, 0.2)
+                    print(f"Tool call failed, retrying with lower temperature {temperature}")
+                    continue
+            # If not a tool call error or out of retries, raise
+            raise e
+    raise Exception("Failed to generate valid tool calls after retries")
+
 def stream_response_to_tts(groq_client, context):
     """
     Request a response from Groq, streaming the result to tts.py
@@ -33,7 +81,22 @@ def stream_response_to_tts(groq_client, context):
     :param context: The context for the model, including the current question.
     """
 
-    completion = groq_client.chat.completions.create(
+    response = call_with_tools_and_retry(groq_client, context, [calculate.tool_schema, weather.today_tool_schema, weather.now_tool_schema, weather.forcast_tool_schema], 3)
+
+    if response.choices[0].message.tool_calls:
+        # 3. Execute each tool call (using the helper function from step 2)
+        for tool_call in response.choices[0].message.tool_calls:
+            function_response = execute_tool_call(tool_call)
+            # Add tool result to messages
+            context.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "name": tool_call.function.name,
+                "content": str(function_response)
+            })
+
+    # 4. Send results back and get final response
+    final = groq_client.chat.completions.create(
         model=model,
         messages =
         [{
@@ -47,7 +110,7 @@ def stream_response_to_tts(groq_client, context):
         stop=None,
     )
 
-    for chunk in completion:
+    for chunk in final:
         q.put(chunk.choices[0].delta.content or "")
         print(chunk.choices[0].delta.content or "", end="", flush=True)
     

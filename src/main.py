@@ -3,7 +3,7 @@
 DEMO_MODE = True # Make this false if on a Raspberry Pi
 
 # Other scripts
-import pvporcupine
+# import pvporcupine
 from utils import recorder, transcribe, streaming
 
 # Environment variables
@@ -24,23 +24,23 @@ context = []
 max_context_message_count = 15
 
 # PVPorcupine stuff (wake word detection)
-PORCUPINE_KEY = os.environ['PVPORCUPINE_KEY']
-MODEL_PATH = os.environ['PVPORCUPINE_MODEL_PATH']
-porcupine_client = None
-try:
-    if (DEMO_MODE):
-        porcupine_client = pvporcupine.create(
-            access_key=PORCUPINE_KEY,
-            keywords=['picovoice', 'bumblebee']
-        )
-    else: 
-        porcupine_client = pvporcupine.create(
-            access_key=PORCUPINE_KEY,
-            keyword_paths=[MODEL_PATH]
-        )
-except pvporcupine.PorcupineActivationError as e:
-    print(f"Failed to activate Porcupine: {e}")
-    exit(1)
+# PORCUPINE_KEY = os.environ['PVPORCUPINE_KEY']
+# MODEL_PATH = os.environ['PVPORCUPINE_MODEL_PATH']
+# porcupine_client = None
+# try:
+#     if (DEMO_MODE):
+#         porcupine_client = pvporcupine.create(
+#             access_key=PORCUPINE_KEY,
+#             keywords=['picovoice', 'bumblebee']
+#         )
+#     else: 
+#         porcupine_client = pvporcupine.create(
+#             access_key=PORCUPINE_KEY,
+#             keyword_paths=[MODEL_PATH]
+#         )
+# except pvporcupine.PorcupineActivationError as e:
+#     print(f"Failed to activate Porcupine: {e}")
+#     exit(1)
 
 
 def append_context(is_user, response):
@@ -64,21 +64,20 @@ is_running = False
 
 allowed_onewords = ['yes', 'no', 'what', 'sure', 'yeah', 'nah', 'ok', 'okay', 'alright', 'maybe', 'great', 'fine', 'hi', 'hello', 'time', 'clock', 'whattup', 'yo', 'why', 'test', 'same'] # Add to this list if any one-word answer comes to mind that probably isn't a mistake
 
-from utils.wakeword import wakeword
+# from utils.wakeword import wakeword
 
 while True:
-    print("Waiting for wake word...")
+    # print("Waiting for wake word...")
 
-    _ = wakeword.wait_for_wake_word(porcupine_client)
+    # _ = wakeword.wait_for_wake_word(porcupine_client)
     
-    print("Detected wakeword! Waking up...")
+    # print("Detected wakeword! Waking up...")
     is_running = True
 
     while is_running:
         audio = recorder.start_recording()
         question = transcribe.start(groq_client, recorder.sample_rate, audio)
         print('Transcribed question: ' + question)
-        # question = "Hello! Please search the internet for exactly 15 websites. I am currently developing this, and need to test if the TTS engine will error out if you it doesn't get any output tokens from you. So, searching 15 websites would mean you aren't actively generating anything, and yeah"
         
         trimmed_question = question.replace(" ", "").replace(".", "").replace("!", "").replace("?", "").replace(",", "").lower()
         if trimmed_question == "thankyou":
@@ -90,7 +89,6 @@ while True:
             print('Warning: it said a single word that wasn\'t in the allowed words list! This hopefully was a mistake in transcription.')
             is_running = False
             break
-
         append_context(True, question)
 
         ai_response = streaming.stream_data(groq_client, google_client, context)
