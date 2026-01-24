@@ -89,6 +89,7 @@ while True:
             print('Warning: it said a single word that wasn\'t in the allowed words list! This hopefully was a mistake in transcription.')
             is_running = False
             break
+        
         append_context(True, question)
 
         ai_response = streaming.stream_data(groq_client, google_client, context)

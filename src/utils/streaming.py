@@ -8,8 +8,12 @@ import sounddevice as sd
 import queue
 from google.cloud import texttospeech
 import threading
+from datetime import datetime, timezone
+
 model = 'moonshotai/Kimi-K2-Instruct-0905' # TODO: have a router to use groq/compound for search results and stuff
 system_prompt = open("src/utils/system_prompt.txt").read()
+utc_dt = datetime.now(timezone.utc) # UTC time
+dt = utc_dt.astimezone() # local time
 
 # Note: the voice can also be specified by name.
 # Names of voices can be retrieved with client.list_voices().
@@ -26,7 +30,7 @@ audio_config = texttospeech.AudioConfig(
 
 q = queue.Queue()
 
-from .tools import calculate, weather
+from .tools import calculate, dt, weather
 
 # Map function names to implementations
 available_functions = {
@@ -34,8 +38,12 @@ available_functions = {
     "get_weather_now": weather.get_weather_now,
     "get_weather_today": weather.get_weather_today,
     "get_forcast": weather.get_weather_forecast,
+    "get_datetime": dt.get_datetime,
     # "search_database": search_database,
 }
+
+available_tools = [calculate.tool_schema, weather.today_tool_schema, weather.now_tool_schema, weather.forcast_tool_schema, dt.tool_schema]
+
 
 def execute_tool_call(tool_call):
     """Parse and execute a single tool call"""
@@ -55,9 +63,10 @@ def call_with_tools_and_retry(client, messages, tools, max_retries=3):
     for attempt in range(max_retries):
         try:
             response = client.chat.completions.create(
-                model="openai/gpt-oss-120b",
+                model=model,
                 messages=messages,
                 tools=tools,
+                tool_choice="auto",
                 temperature=temperature
             )
             return response
@@ -81,11 +90,12 @@ def stream_response_to_tts(groq_client, context):
     :param context: The context for the model, including the current question.
     """
 
-    response = call_with_tools_and_retry(groq_client, context, [calculate.tool_schema, weather.today_tool_schema, weather.now_tool_schema, weather.forcast_tool_schema], 3)
+    response = call_with_tools_and_retry(groq_client, context, available_tools, 4)
 
     if response.choices[0].message.tool_calls:
         # 3. Execute each tool call (using the helper function from step 2)
         for tool_call in response.choices[0].message.tool_calls:
+            print(f"Tool being used: {tool_call.function.name}")
             function_response = execute_tool_call(tool_call)
             # Add tool result to messages
             context.append({
@@ -105,6 +115,8 @@ def stream_response_to_tts(groq_client, context):
         }] + context, # Just add all the context passed in! Very easy :D
         temperature=0.6,
         max_completion_tokens=4096,
+        tools=available_tools,
+        tool_choice="none",
         top_p=1,
         stream=True,
         stop=None,

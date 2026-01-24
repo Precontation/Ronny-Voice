@@ -11,7 +11,7 @@ g = geocoder.ipinfo('me')
 # Setup the Open-Meteo API client with cache and retry on error
 cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
 retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
-openmeteo = openmeteo_requests.Client(session = retry_session)
+openmeteo = openmeteo_requests.Client(session = retry_session) # pyright: ignore[reportArgumentType]
 
 def get_weather_now():
   # Make sure all required weather variables are listed here
@@ -83,8 +83,8 @@ def get_weather_today():
     inclusive = "left"
   )}
 
-  hourly_data["temperature_2m"] = hourly_temperature_2m
-  hourly_data["precipitation_probability"] = hourly_precipitation_probability
+  hourly_data["temperature_2m"] = hourly_temperature_2m # pyright: ignore[reportArgumentType]
+  hourly_data["precipitation_probability"] = hourly_precipitation_probability # pyright: ignore[reportArgumentType]
 
   hourly_dataframe = pd.DataFrame(data = hourly_data)
   return "Hourly data\n", hourly_dataframe
@@ -94,8 +94,8 @@ def get_weather_forecast():
   # The order of variables in hourly or daily is important to assign them correctly below
   url = "https://api.open-meteo.com/v1/forecast"
   params = {
-    "latitude": 52.52,
-    "longitude": 13.41,
+    "latitude": g.latlng[0],
+    "longitude": g.latlng[1],
     "daily": ["temperature_2m_max", "temperature_2m_min"],
     "temperature_unit": "fahrenheit",
   }
@@ -125,8 +125,8 @@ def get_weather_forecast():
     inclusive = "left"
   )}
 
-  daily_data["temperature_2m_max"] = daily_temperature_2m_max
-  daily_data["temperature_2m_min"] = daily_temperature_2m_min
+  daily_data["temperature_2m_max"] = daily_temperature_2m_max # pyright: ignore[reportArgumentType]
+  daily_data["temperature_2m_min"] = daily_temperature_2m_min # pyright: ignore[reportArgumentType]
 
   daily_dataframe = pd.DataFrame(data = daily_data)
   return "Daily data\n", daily_dataframe
@@ -135,7 +135,7 @@ now_tool_schema = {
   "type": "function",
   "function": {
     "name": "get_weather_now",
-    "description": "Get the current weather, using the user's estimated location",
+    "description": "Get the current weather at the exact moment, using the user's estimated location",
   }
 }
 
