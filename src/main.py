@@ -62,7 +62,7 @@ recorder.find_sample_rate()
 
 is_running = False
 
-allowed_onewords = ['yes', 'no', 'what', 'sure', 'yeah', 'nah', 'ok', 'okay', 'alright', 'maybe', 'great', 'fine', 'hi', 'hello', 'time', 'clock', 'whattup', 'yo', 'why', 'test', 'same'] # Add to this list if any one-word answer comes to mind that probably isn't a mistake
+allowed_onewords = ['yes', 'no', 'what', 'sure', 'yeah', 'nah', 'ok', 'okay', 'alright', 'maybe', 'great', 'fine', 'hi', 'hello', 'time', 'clock', 'whattup', 'yo', 'why', 'test', 'same', 'clanker', 'clinker'] # Add to this list if any one-word answer comes to mind that probably isn't a mistake
 
 # from utils.wakeword import wakeword
 

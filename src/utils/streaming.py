@@ -10,6 +10,7 @@ from google.cloud import texttospeech
 import threading
 from datetime import datetime, timezone
 
+# moonshotai/Kimi-K2-Instruct-0905
 model = 'moonshotai/Kimi-K2-Instruct-0905' # TODO: have a router to use groq/compound for search results and stuff
 system_prompt = open("src/utils/system_prompt.txt").read()
 utc_dt = datetime.now(timezone.utc) # UTC time
@@ -90,20 +91,29 @@ def stream_response_to_tts(groq_client, context):
     :param context: The context for the model, including the current question.
     """
 
-    response = call_with_tools_and_retry(groq_client, context, available_tools, 4)
+    try:
+        response = call_with_tools_and_retry(groq_client, context, available_tools, 4)
 
-    if response.choices[0].message.tool_calls:
-        # 3. Execute each tool call (using the helper function from step 2)
-        for tool_call in response.choices[0].message.tool_calls:
-            print(f"Tool being used: {tool_call.function.name}")
-            function_response = execute_tool_call(tool_call)
-            # Add tool result to messages
-            context.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "name": tool_call.function.name,
-                "content": str(function_response)
-            })
+        if response.choices[0].message.tool_calls:
+            # 3. Execute each tool call (using the helper function from step 2)
+            for tool_call in response.choices[0].message.tool_calls:
+                print(f"Tool being used: {tool_call.function.name}")
+                function_response = execute_tool_call(tool_call)
+                # Add tool result to messages
+                context.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "name": tool_call.function.name,
+                    "content": str(function_response)
+                })
+    except Exception as e:
+        context.append({
+            "role": "tool",
+            "tool_call_id": "0",
+            "name": "Tool error handler",
+            "content": "Tool error!"
+        })
+        print("Model tool had an error: " + str(e))
 
     # 4. Send results back and get final response
     final = groq_client.chat.completions.create(
