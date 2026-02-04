@@ -4,6 +4,7 @@ DEMO_MODE = True # Make this false if on a Raspberry Pi
 
 # Other scripts
 # import pvporcupine
+import pvporcupine
 from utils import recorder, transcribe, streaming
 
 # Environment variables
@@ -24,23 +25,17 @@ context = []
 max_context_message_count = 15
 
 # PVPorcupine stuff (wake word detection)
-# PORCUPINE_KEY = os.environ['PVPORCUPINE_KEY']
-# MODEL_PATH = os.environ['PVPORCUPINE_MODEL_PATH']
-# porcupine_client = None
-# try:
-#     if (DEMO_MODE):
-#         porcupine_client = pvporcupine.create(
-#             access_key=PORCUPINE_KEY,
-#             keywords=['picovoice', 'bumblebee']
-#         )
-#     else: 
-#         porcupine_client = pvporcupine.create(
-#             access_key=PORCUPINE_KEY,
-#             keyword_paths=[MODEL_PATH]
-#         )
-# except pvporcupine.PorcupineActivationError as e:
-#     print(f"Failed to activate Porcupine: {e}")
-#     exit(1)
+PORCUPINE_KEY = os.environ['PVPORCUPINE_KEY']
+MODEL_PATH = os.environ['PVPORCUPINE_MODEL_PATH']
+porcupine_client = None
+try:
+    porcupine_client = pvporcupine.create(
+        access_key=PORCUPINE_KEY,
+        keyword_paths=[MODEL_PATH]
+    )
+except pvporcupine.PorcupineActivationError as e:
+    print(f"Failed to activate Porcupine: {e}")
+    exit(1)
 
 
 def append_context(is_user, response):
@@ -64,35 +59,47 @@ is_running = False
 
 allowed_onewords = ['yes', 'no', 'what', 'sure', 'yeah', 'nah', 'ok', 'okay', 'alright', 'maybe', 'great', 'fine', 'hi', 'hello', 'time', 'clock', 'whattup', 'yo', 'why', 'test', 'same', 'clanker', 'clinker'] # Add to this list if any one-word answer comes to mind that probably isn't a mistake
 
-# from utils.wakeword import wakeword
 
-while True:
-    # print("Waiting for wake word...")
+from utils.wakeword import wakeword
 
-    # _ = wakeword.wait_for_wake_word(porcupine_client)
-    
-    # print("Detected wakeword! Waking up...")
-    is_running = True
+async def main():
+    while True:
+        print("Waiting for wake word...")
 
-    while is_running:
-        audio = recorder.start_recording()
-        question = transcribe.start(groq_client, recorder.sample_rate, audio)
-        print('Transcribed question: ' + question)
-        
-        trimmed_question = question.replace(" ", "").replace(".", "").replace("!", "").replace("?", "").replace(",", "").lower()
-        if trimmed_question == "thankyou":
-            print('Warning: it said "thank you" which either means the user actually said something short or that they said nothing.')
-            is_running = False
-            break
+        if porcupine_client:
+            await wakeword.wait_for_wake_word(porcupine_client)
+            print("Detected wakeword! Waking up...")
+        else:
+            print("Wakeword system disabled!!")
 
-        if len(question.split()) == 1 and trimmed_question not in allowed_onewords:
-            print('Warning: it said a single word that wasn\'t in the allowed words list! This hopefully was a mistake in transcription.')
-            is_running = False
-            break
-        
-        append_context(True, question)
+        is_running = True
 
-        ai_response = streaming.stream_data(groq_client, google_client, context)
-        append_context(False, ai_response)
-        
-        print('\n-----------------')
+        while is_running:
+            audio = recorder.start_recording()
+            if audio is None:
+                break
+            
+            question = transcribe.start(groq_client, recorder.sample_rate, audio)
+            print('Transcribed question: ' + question)
+            
+            trimmed_question = question.replace(" ", "").replace(".", "").replace("!", "").replace("?", "").replace(",", "").lower()
+            if trimmed_question == "thankyou":
+                print('Warning: it said "thank you" which either means the user actually said something short or that they said nothing.')
+                is_running = False
+                break
+
+            if len(question.split()) == 1 and trimmed_question not in allowed_onewords:
+                print('Warning: it said a single word that wasn\'t in the allowed words list! This hopefully was a mistake in transcription.')
+                is_running = False
+                break
+            
+            append_context(True, question)
+
+            ai_response = streaming.stream_data(groq_client, google_client, context)
+            append_context(False, ai_response)
+            
+            print('\n-----------------')
+
+import asyncio
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())

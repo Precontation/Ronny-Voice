@@ -87,4 +87,4 @@ def start_recording():
         return np.concatenate(recorded_chunks, axis=0)
     else:
         print("No recording data found!")
-        return np.array([])
+        return None
