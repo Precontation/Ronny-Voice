@@ -9,6 +9,7 @@ import queue
 from google.cloud import texttospeech
 import threading
 from datetime import datetime, timezone
+from rich import console
 
 # moonshotai/Kimi-K2-Instruct-0905
 model = 'moonshotai/Kimi-K2-Instruct-0905' # TODO: have a router to use groq/compound for search results and stuff
@@ -55,7 +56,7 @@ def execute_tool_call(tool_call):
     # Call the function with unpacked arguments
     return function_to_call(**function_args)
 
-def call_with_tools_and_retry(client, messages, tools, max_retries=3):
+def call_with_tools_and_retry(client, messages, tools, console: console.Console, max_retries=3):
     """Call model with tools, retrying with adjusted temperature on failure"""
     
     # Start with moderate temperature
@@ -77,13 +78,13 @@ def call_with_tools_and_retry(client, messages, tools, max_retries=3):
                 if attempt < max_retries - 1:
                     # Decrease temperature for next attempt to reduce hallucinations
                     temperature = max(temperature - 0.2, 0.2)
-                    print(f"Tool call failed, retrying with lower temperature {temperature}")
+                    console.print(f"Tool call failed, retrying with lower temperature {temperature}")
                     continue
             # If not a tool call error or out of retries, raise
             raise e
     raise Exception("Failed to generate valid tool calls after retries")
 
-def stream_response_to_tts(groq_client, context):
+def stream_response_to_tts(groq_client, context, console: console.Console):
     """
     Request a response from Groq, streaming the result to tts.py
     
@@ -92,12 +93,12 @@ def stream_response_to_tts(groq_client, context):
     """
 
     try:
-        response = call_with_tools_and_retry(groq_client, context, available_tools, 4)
+        response = call_with_tools_and_retry(groq_client, context, available_tools, console, 4)
 
         if response.choices[0].message.tool_calls:
             # 3. Execute each tool call (using the helper function from step 2)
             for tool_call in response.choices[0].message.tool_calls:
-                print(f"Tool being used: {tool_call.function.name}")
+                console.print(f"Tool being used: {tool_call.function.name}")
                 function_response = execute_tool_call(tool_call)
                 # Add tool result to messages
                 context.append({
@@ -113,7 +114,7 @@ def stream_response_to_tts(groq_client, context):
             "name": "Tool error handler",
             "content": "Tool error!"
         })
-        print("Model tool had an error: " + str(e))
+        console.print("Model tool had an error: " + str(e))
 
     # 4. Send results back and get final response
     final = groq_client.chat.completions.create(
@@ -134,11 +135,11 @@ def stream_response_to_tts(groq_client, context):
 
     for chunk in final:
         q.put(chunk.choices[0].delta.content or "")
-        print(chunk.choices[0].delta.content or "", end="", flush=True)
+        console.print(chunk.choices[0].delta.content or "", end="")
     
     q.put(None)
 
-def stream_data(groq_client, google_client, context):
+def stream_data(groq_client, google_client, context, console: console.Console):
     global q
 
     """Synthesizes speech from a stream of input text."""
@@ -169,16 +170,16 @@ def stream_data(groq_client, google_client, context):
                     input=texttospeech.StreamingSynthesisInput(markup=data)
                 )
             except queue.Empty:
-                print("Empty queue! Telling TTS to just say nothing so it doesn't error out.", flush=True)
+                console.print("Empty queue! Telling TTS to just say nothing so it doesn't error out.")
                 yield texttospeech.StreamingSynthesizeRequest(
                     input=texttospeech.StreamingSynthesisInput(markup="")
                 )
     
     q = queue.Queue()
-    response_thread = threading.Thread(target=stream_response_to_tts, args=(groq_client, context))
+    response_thread = threading.Thread(target=stream_response_to_tts, args=(groq_client, context, console))
     response_thread.start()
     
-    print('Started TTS!', flush=True)
+    console.print('Started TTS!', )
 
     streaming_responses = google_client.streaming_synthesize(request_generator())
 

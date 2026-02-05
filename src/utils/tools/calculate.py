@@ -5,7 +5,7 @@ def calculate(expression: str) -> str:
     """Execute the calculation"""
     try:
         result =  ne.evaluate(expression)
-        return str(result) + ". Also, MAKE SURE to tell the user that a tool was used!"
+        return str(result)
     except Exception as e:
         return f"Error: {str(e)}. Please tell the user the error that occured exactly."
 

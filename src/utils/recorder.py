@@ -10,8 +10,9 @@ import time as timeButDifferentNameAA
 is_recording = False
 probably_talked = False
 q = queue.Queue() # Create a queue for the queue to queue to (yes i know)
-finished_speaking_time = 1.5 # For the alexa-like "answer when done asking question"
+finished_speaking_time = 1.2 # For the alexa-like "answer when done asking question"
 not_talking_time = 5 # Add a better feel if you haven't started to talk yet
+min_volume = 7
 time_since_last_zero_volume_norm = timeButDifferentNameAA.time() # For the alexa-like "answer when done asking question"
 
 # Settings
@@ -31,7 +32,7 @@ def callback(indata, frames, time, status):
 
     current_time = timeButDifferentNameAA.time()
     volume_norm = int(np.linalg.norm(indata) * audio_sensitivity)
-    if volume_norm > 5:
+    if volume_norm > min_volume:
         time_since_last_zero_volume_norm = current_time
         probably_talked = True
 
