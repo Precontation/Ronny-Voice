@@ -10,7 +10,7 @@ import time as timeButDifferentNameAA
 is_recording = False
 probably_talked = False
 q = queue.Queue() # Create a queue for the queue to queue to (yes i know)
-finished_speaking_time = 1.2 # For the alexa-like "answer when done asking question"
+finished_speaking_time = 2 # For the alexa-like "answer when done asking question"
 not_talking_time = 5 # Add a better feel if you haven't started to talk yet
 min_volume = 7
 time_since_last_zero_volume_norm = timeButDifferentNameAA.time() # For the alexa-like "answer when done asking question"
@@ -87,7 +87,7 @@ def start_recording():
             while is_recording:
                 try:
                     data = q.get() # Get the data from the queue!
-                    file.write(data)
+                    # file.write(data)
                     recorded_chunks.append(data)
                 except queue.Empty:
                     continue # If there's no queue just don't really do anything
@@ -96,6 +96,15 @@ def start_recording():
 
     if recorded_chunks and probably_talked:
         print("Finished recording!")
+
+        listening_sfx = BASE_DIR / "sfx" / "end_listening.wav"
+        if listening_sfx.exists():
+            data, fs = sf.read(str(listening_sfx))
+            sd.play(data, fs)
+            sd.wait()
+        else:
+            print(f"Listening sfx not found! Skipping..: {listening_sfx.parent}")
+            
         return np.concatenate(recorded_chunks, axis=0)
     else:
         print("No recording data found!")

@@ -126,8 +126,6 @@ def stream_response_to_tts(groq_client, context, console: console.Console):
         }] + context, # Just add all the context passed in! Very easy :D
         temperature=0.6,
         max_completion_tokens=4096,
-        tools=available_tools,
-        tool_choice="none",
         top_p=1,
         stream=True,
         stop=None,
