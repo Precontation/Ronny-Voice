@@ -66,6 +66,16 @@ def start_recording():
     Start recording with all the fun auto-turn-off and more features
     """
 
+    from pathlib import Path
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    listening_sfx = BASE_DIR / "sfx" / "start_listening.wav"
+    if listening_sfx.exists():
+        data, fs = sf.read(str(listening_sfx))
+        sd.play(data, fs)
+        sd.wait()
+    else:
+        print(f"Listening sfx not found! Skipping..: {listening_sfx.parent}")
+
     recorded_chunks = []
     q.queue.clear()
     time_since_last_zero_volume_norm = timeButDifferentNameAA.time() # For the alexa-like "answer when done asking question"
@@ -77,6 +87,7 @@ def start_recording():
             while is_recording:
                 try:
                     data = q.get() # Get the data from the queue!
+                    file.write(data)
                     recorded_chunks.append(data)
                 except queue.Empty:
                     continue # If there's no queue just don't really do anything

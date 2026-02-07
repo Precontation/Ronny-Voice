@@ -32,7 +32,7 @@ audio_config = texttospeech.AudioConfig(
 
 q = queue.Queue()
 
-from .tools import calculate, dt, weather
+from .tools import calculate, dt, weather, clipboard
 
 # Map function names to implementations
 available_functions = {
@@ -41,10 +41,10 @@ available_functions = {
     "get_weather_today": weather.get_weather_today,
     "get_forcast": weather.get_weather_forecast,
     "get_datetime": dt.get_datetime,
-    # "search_database": search_database,
+    "get_clipboard": clipboard.get_clipboard
 }
 
-available_tools = [calculate.tool_schema, weather.today_tool_schema, weather.now_tool_schema, weather.forcast_tool_schema, dt.tool_schema]
+available_tools = [calculate.tool_schema, weather.today_tool_schema, weather.now_tool_schema, weather.forcast_tool_schema, dt.tool_schema, clipboard.tool_schema]
 
 
 def execute_tool_call(tool_call):

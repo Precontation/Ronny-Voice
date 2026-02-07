@@ -14,6 +14,11 @@ import os
 # TUI stuff
 from rich import print
 from rich.console import Console
+from rich_gradient import Gradient
+
+# Loading files
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent
 
 load_dotenv()
 
@@ -30,12 +35,12 @@ max_context_message_count = 15
 
 # PVPorcupine stuff (wake word detection)
 PORCUPINE_KEY = os.environ['PVPORCUPINE_KEY']
-MODEL_PATH = os.environ['PVPORCUPINE_MODEL_PATH']
+MODEL_PATH = BASE_DIR / "utils" / "wakeword" / "model" / "model_mac.ppn"
 porcupine_client = None
 try:
     porcupine_client = pvporcupine.create(
         access_key=PORCUPINE_KEY,
-        keyword_paths=[MODEL_PATH]
+        keyword_paths=[MODEL_PATH.as_posix()]
     )
 except pvporcupine.PorcupineActivationError as e:
     print(f"Failed to activate Porcupine: {e}")
@@ -71,12 +76,12 @@ console = Console()
 async def main():
     console.clear()
     print("\n")
-    print("""[red]:::::::..       ...   :::.    :::.:::.    :::..-:.     ::-.    :::      .::.  ...     :::  .,-::::: .,::::::  
+    print(Gradient(""":::::::..       ...   :::.    :::.:::.    :::..-:.     ::-.    :::      .::.  ...     :::  .,-::::: .,::::::  
 ;;;;``;;;;   .;;;;;;;.`;;;;,  `;;;`;;;;,  `;;; ';;.   ;;;;'    ';;,   ,;;;'.;;;;;;;.  ;;;,;;;'````' ;;;;''''  
  [[[,/[[['  ,[[     \\[[,[[[[[. '[[  [[[[[. '[[   '[[,[[['       \\[[  .[[/ ,[[     \\[[,[[[[[[         [[cccc   
  $$$$$$c    $$$,     $$$$$$ \"Y$c$$  $$$ \"Y$c$$     c$$\"          Y$c.$$\"  $$$,     $$$$$$$$$         $$\"\"\"\"   
  888b "88bo,"888,_ _,88P888    Y88  888    Y88   ,8P"`            Y88P    "888,_ _,88P888`88bo,__,o, 888oo,__ 
- MMMM   \"W\"   \"YMMMMMP\" MMM     YM  MMM     YM  mM\"                MP       \"YMMMMMP\" MMM  \"YUMMMMMP\"\"\"\"\"YUMMM[/red]""")
+ MMMM   \"W\"   \"YMMMMMP\" MMM     YM  MMM     YM  mM\"                MP       \"YMMMMMP\" MMM  \"YUMMMMMP\"\"\"\"\"YUMMM""", colors=["red", "orange", "blue"], justify='center'))
     console.rule(style="red")
     while True:
         print("[italic]Waiting for wake word[white]...[/white][/italic]")
@@ -94,7 +99,7 @@ async def main():
                 audio = recorder.start_recording()
 
                 if audio is None:
-                    print("[red bold]WARNING:[/red bold] Audio not found! [italic]Going back to listening for wake word[white]...[/white][/italic]")
+                    print("\n[red bold]WARNING:[/red bold] Audio not found! [italic]Going back to listening for wake word[white]...[/white][/italic]")
                     break
 
                 status.update("Transcribing...\n", spinner_style="yellow")
