@@ -66,7 +66,7 @@ recorder.find_sample_rate()
 
 is_running = False
 
-allowed_onewords = ['yes', 'no', 'what', 'sure', 'yeah', 'nah', 'ok', 'okay', 'alright', 'maybe', 'great', 'fine', 'hi', 'hello', 'time', 'clock', 'whattup', 'yo', 'why', 'test', 'same', 'clanker', 'clinker'] # Add to this list if any one-word answer comes to mind that probably isn't a mistake
+# allowed_onewords = ['yes', 'no', 'what', 'sure', 'yeah', 'nah', 'ok', 'okay', 'alright', 'maybe', 'great', 'fine', 'hi', 'hello', 'time', 'clock', 'whattup', 'yo', 'why', 'test', 'same', 'clanker', 'clinker'] # Add to this list if any one-word answer comes to mind that probably isn't a mistake
 
 
 from utils.wakeword import wakeword
@@ -105,24 +105,24 @@ async def main():
                 status.update("Transcribing...\n", spinner_style="yellow")
 
                 question = transcribe.start(groq_client, recorder.sample_rate, audio)
-                print('[yellow bold]Transcribed question:[/yellow bold] [italic]' + question + "[/italic]")
+                console.print('[yellow bold]Transcribed question:[/yellow bold] [italic]' + question + "[/italic]")
                 
                 trimmed_question = question.replace(" ", "").replace(".", "").replace("!", "").replace("?", "").replace(",", "").lower()
                 if trimmed_question == "thankyou":
-                    print('Warning: it said "thank you" which either means the user actually said something short or that they said nothing.')
+                    console.print('Warning: it said "thank you" which either means the user actually said something short or that they said nothing.')
                     is_running = False
                     break
 
-                if len(question.split()) == 1 and trimmed_question not in allowed_onewords:
-                    print('Warning: it said a single word that wasn\'t in the allowed words list! This hopefully was a mistake in transcription.')
-                    is_running = False
-                    break
+                # if len(question.split()) == 1 and trimmed_question not in allowed_onewords:
+                #     console.print('Warning: it said a single word that wasn\'t in the allowed words list! This hopefully was a mistake in transcription.')
+                #     is_running = False
+                #     break
                 
                 append_context(True, question)
 
             ai_response = streaming.stream_data(groq_client, google_client, context, console)
             append_context(False, ai_response)
-            print("\n")
+            console.print("\n")
             console.rule(style="blue")
 
 import asyncio
