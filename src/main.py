@@ -1,7 +1,5 @@
 # Copyright 2026 The Ronny Voice Foundation
 
-DEMO_MODE = True # Make this false if on a Raspberry Pi
-
 # Other scripts
 # import pvporcupine
 import pvporcupine
