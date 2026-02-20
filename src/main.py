@@ -33,13 +33,13 @@ groq_client = Groq(api_key=GROQ_API_KEY)
 context = []
 max_context_message_count = 15
 
-# PVPorcupine stuff (wake word detection)
-PORCUPINE_KEY = os.environ['PVPORCUPINE_KEY']
+# PVPorcupine stuff (wake word detection and now also voice active detection thing to stop recording when done)
+PICOVOICE_KEY = os.environ['PICOVOICE_KEY']
 MODEL_PATH = BASE_DIR / "utils" / "wakeword" / "model" / "model_mac.ppn"
 porcupine_client = None
 try:
     porcupine_client = pvporcupine.create(
-        access_key=PORCUPINE_KEY,
+        access_key=PICOVOICE_KEY,
         keyword_paths=[MODEL_PATH.as_posix()]
     )
 except pvporcupine.PorcupineActivationError as e:
@@ -62,7 +62,7 @@ def append_context(is_user, response):
     if len(context) > max_context_message_count: # Based on this setup, you only need to check once and it won't go over.
         del context[0] # Item 0 is always the oldest in the list
 
-recorder.find_sample_rate()
+recorder.setup(PICOVOICE_KEY)
 
 is_running = False
 

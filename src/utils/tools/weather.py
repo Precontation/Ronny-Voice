@@ -20,7 +20,7 @@ def get_weather_now():
   params = {
     "latitude": g.latlng[0],
     "longitude": g.latlng[1],
-    "current": ["precipitation", "temperature_2m"],
+    "current": ["temperature_2m", "precipitation", "rain", "weather_code"],
     "temperature_unit": "fahrenheit",
   }
   responses = openmeteo.weather_api(url, params=params)
@@ -31,19 +31,18 @@ def get_weather_now():
   # Process current data. The order of variables needs to be the same as requested.
   current = response.Current()
   
-  if not current:
-    return
-  
-  currentZero = current.Variables(0)
-  currentOne = current.Variables(1)
+  # Assign by index based on the list above
+  temp = current.Variables(0).Value() # type: ignore
+  precip = current.Variables(1).Value() # type: ignore
+  rain = current.Variables(2).Value() # type: ignore
+  code = current.Variables(3).Value() # type: ignore
 
-  if not currentZero or not currentOne:
-    return
-  
-  current_precipitation = currentZero.Value()
-  current_temperature_2m = currentOne.Value()
-
-  return f"Current time: {current.Time()}\nCurrent precipitation: {current_precipitation}\nCurrent temperature_2m: {current_temperature_2m}"
+  return (
+    f"Temp: {temp}°F\n"
+    f"Precipitation: {precip}mm\n"
+    f"Rain: {rain}mm\n"
+    f"WMO Code: {code}"
+  )
 
 def get_weather_today():
   # Make sure all required weather variables are listed here
@@ -52,7 +51,7 @@ def get_weather_today():
   params = {
     "latitude": g.latlng[0],
     "longitude": g.latlng[1],
-    "hourly": ["temperature_2m", "precipitation_probability"],
+    "hourly": ["temperature_2m", "precipitation", "rain", "weather_code"],
     "forecast_days": 1,
     "temperature_unit": "fahrenheit",
   }
@@ -67,14 +66,15 @@ def get_weather_today():
   if not hourly:
     return
 
-  hourlyZero = hourly.Variables(0)
-  hourlyOne = hourly.Variables(1)
-
-  if not hourlyZero or not hourlyOne:
-    return
+  hourlyTemperature = hourly.Variables(0)
+  hourlyPrecipitation = hourly.Variables(1)
+  hourlyRain = hourly.Variables(2)
+  hourlyWeather = hourly.Variables(3)
   
-  hourly_temperature_2m = hourlyZero.ValuesAsNumpy()
-  hourly_precipitation_probability = hourlyOne.ValuesAsNumpy()
+  temp = hourlyTemperature.ValuesAsNumpy() # type: ignore
+  precip = hourlyPrecipitation.ValuesAsNumpy() # type: ignore
+  rain = hourlyRain.ValuesAsNumpy() # type: ignore
+  code = hourlyWeather.ValuesAsNumpy() # type: ignore
 
   hourly_data = {"date": pd.date_range(
     start = pd.to_datetime(hourly.Time(), unit = "s", utc = True),
@@ -83,8 +83,10 @@ def get_weather_today():
     inclusive = "left"
   )}
 
-  hourly_data["temperature_2m"] = hourly_temperature_2m # pyright: ignore[reportArgumentType]
-  hourly_data["precipitation_probability"] = hourly_precipitation_probability # pyright: ignore[reportArgumentType]
+  hourly_data["temperature_2m"] = temp # type: ignore
+  hourly_data["precipitation"] = precip # type: ignore
+  hourly_data["rain"] = rain # type: ignore
+  hourly_data["weather_code"] = code # type: ignore
 
   hourly_dataframe = pd.DataFrame(data = hourly_data)
   return "Hourly data\n", hourly_dataframe
@@ -96,7 +98,7 @@ def get_weather_forecast():
   params = {
     "latitude": g.latlng[0],
     "longitude": g.latlng[1],
-    "daily": ["temperature_2m_max", "temperature_2m_min"],
+    "daily": ["temperature_2m_max", "temperature_2m_min", "precipitation_sum", "rain_sum", "weather_code"],
     "temperature_unit": "fahrenheit",
   }
   responses = openmeteo.weather_api(url, params=params)
@@ -109,14 +111,17 @@ def get_weather_forecast():
   if not daily:
     return
   
-  dailyZero = daily.Variables(0)
-  dailyOne = daily.Variables(1)
-
-  if not dailyZero or not dailyOne:
-    return
+  dailyTemperatureMin = daily.Variables(0)
+  dailyTemperatureMax = daily.Variables(0)
+  dailyPrecipitation = daily.Variables(1)
+  dailyRain = daily.Variables(2)
+  dailyWeather = daily.Variables(3)
   
-  daily_temperature_2m_max = dailyZero.ValuesAsNumpy()
-  daily_temperature_2m_min = dailyOne.ValuesAsNumpy()
+  tempMin = dailyTemperatureMin.ValuesAsNumpy() # type: ignore
+  tempMax = dailyTemperatureMax.ValuesAsNumpy() # type: ignore
+  precip = dailyPrecipitation.ValuesAsNumpy() # type: ignore
+  rain = dailyRain.ValuesAsNumpy() # type: ignore
+  code = dailyWeather.ValuesAsNumpy() # type: ignore
 
   daily_data = {"date": pd.date_range(
     start = pd.to_datetime(daily.Time(), unit = "s", utc = True),
@@ -125,8 +130,11 @@ def get_weather_forecast():
     inclusive = "left"
   )}
 
-  daily_data["temperature_2m_max"] = daily_temperature_2m_max # pyright: ignore[reportArgumentType]
-  daily_data["temperature_2m_min"] = daily_temperature_2m_min # pyright: ignore[reportArgumentType]
+  daily_data["temperature_2m_min"] = tempMin # type: ignore
+  daily_data["temperature_2m_max"] = tempMax # type: ignore
+  daily_data["precipitation"] = precip # type: ignore
+  daily_data["rain"] = rain # type: ignore
+  daily_data["weather_code"] = code # type: ignore
 
   daily_dataframe = pd.DataFrame(data = daily_data)
   return "Daily data\n", daily_dataframe

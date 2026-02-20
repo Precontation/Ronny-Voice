@@ -125,7 +125,7 @@ def stream_response_to_tts(groq_client, context, console: console.Console):
             'content': system_prompt,
         }] + context, # Just add all the context passed in! Very easy :D
         temperature=0.6,
-        max_completion_tokens=4096,
+        max_completion_tokens=300, # System prompt says it only has 200 tokens, so we just lie just in case to make it so it won't cut off
         top_p=1,
         stream=True,
         stop=None,
