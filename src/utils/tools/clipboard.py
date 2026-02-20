@@ -3,7 +3,7 @@ import pyperclip
 def get_clipboard() -> str:
     """Return the clipboard"""
     clipboard = pyperclip.paste()
-    return clipboard
+    return "Clipboard content: " + clipboard
 
 tool_schema = {
   "type": "function",
