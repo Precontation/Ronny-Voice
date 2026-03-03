@@ -2,8 +2,14 @@ import pyperclip
 
 def get_clipboard() -> str:
     """Return the clipboard"""
-    clipboard = pyperclip.paste()
-    return "Clipboard content: " + clipboard
+    try:
+      clipboard = pyperclip.paste()
+      if (clipboard):
+        return "Clipboard content: " + clipboard
+      
+      return "Clipboard either not available or is empty!";
+    except:
+      return "Clipboard either not available or is empty!";
 
 tool_schema = {
   "type": "function",
